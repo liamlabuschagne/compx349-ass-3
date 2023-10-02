@@ -1,1 +1,1 @@
-cp MICROBIT.hex /media/ll310/MICROBIT
+cp MICROBIT.hex /media/$USER/MICROBIT
