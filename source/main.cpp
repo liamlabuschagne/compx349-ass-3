@@ -47,35 +47,34 @@ void writeLED(int led, int ledSwitch) {
 	}
 }
 
+int readGreyscale(int side) { // return of 1 is white, 0 is black, -1 is invalid input
+	switch (side)
+	{
+		case 0:
+			return uBit.io.P13.getDigitalValue();
+			break;
+		case 1:
+			return uBit.io.P14.getDigitalValue();
+			break;
+	}
+	return -1;
+}
+
 int main()
 {
 	uBit.init();
+	int ret;
 	while(1){
-		motorRun(0,0,0x80);
-		writeLED(0, 1);
-		uBit.sleep(1000);
-		motorStop(0);
-		motorRun(0,1,0x80);
-		uBit.sleep(1000);
-		motorStop(0);
-		writeLED(0, 0);
-		motorRun(1,0,0x80);
-		writeLED(1, 1);
-		uBit.sleep(1000);
-		motorStop(1);
-		motorRun(1,1,0x80);
-		uBit.sleep(1000);
-		motorStop(1);
-		writeLED(1, 0);
-		motorRun(2,0,0x80);
-		writeLED(1, 1);
-		writeLED(0, 1);
-		uBit.sleep(1000);
-		motorStop(2);
-		motorRun(2,1,0x80);
-		uBit.sleep(1000);
-		motorStop(2);
-		writeLED(1, 0);
-		writeLED(0, 0);
+		if (readGreyscale(0)) {
+			motorRun(0, 0, 0x50);
+			uBit.sleep(500);
+			motorStop(0);
+		}
+
+		if (readGreyscale(1)) {
+			motorRun(1, 0, 0x50);
+			uBit.sleep(500);
+			motorStop(1);
+		}
 	}
 }
