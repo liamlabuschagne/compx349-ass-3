@@ -1,0 +1,46 @@
+Basic requirement
+
+ * All code compiles without warnings
+
+Part 1 API: 
+
+Pass
+ * read greyscale sensors (via event handlers or otherwise)
+ * operate LEDs
+ * operate motors
+
+Good
+ * event driven 
+    * custom events defined and used correctly
+    * appropriate locations/uses
+    * well executed, bonus
+
+Excellent
+ * code quality 
+    * enums or defines used, not raw ints/chars for API functions
+    * sensible, clear conditionals
+    * minimal globals, combine into data structures
+    * well executed, builds cleanly
+
+Part 2
+
+Pass - Line following:
+
+ * using the API, not writing to pins
+ * receive events from sensors (detect line)
+ * algorithm 
+
+Good - Intersections: 
+ * using the API, not writing to pins
+ * receive events from sensors (detect intersection)
+ * algorithm 
+
+Excellent
+ * not hard coded list of directions
+ * high code quality
+
+
+
+Part 3 Advanced: all for excellent mark
+ * quality of extension code 
+ * graded on difficulty of extension to implement 
