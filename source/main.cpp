@@ -1,6 +1,7 @@
 #include "MicroBit.h"
 
 MicroBit uBit;
+int bias = 0; // Default left bias
 
 void motorRun(int index, int direction, int speed)
 {
@@ -84,15 +85,36 @@ int readGreyscale(int side)
 //     }
 // }
 
-void onCollision(Event evt)
+void onCollisionLeft(Event evt)
 {
-	motorStop(0);
-	motorRun(1,0,0x30);
+	if (bias == 0) {
+		motorStop(0);
+		motorRun(1,0,0x30);
+	}
 }
 
-void postCollision(Event evt){
-	motorStop(1);
-	motorRun(0,0,0x30);
+void postCollisionLeft(Event evt){
+	if (bias == 0) {
+		motorStop(1);
+		motorRun(0,0,0x30);
+		bias = 1;
+	}
+}
+
+void onCollisionRight(Event evt)
+{
+	if (bias == 1) {
+		motorStop(1);
+		motorRun(0,0,0x30);
+	}
+}
+
+void postCollisionRight(Event evt){
+	if (bias == 1) {
+		motorStop(0);
+		motorRun(1,0,0x30);
+		bias = 0;
+	}
 }
 
 int main()
@@ -100,8 +122,17 @@ int main()
     uBit.init();
 
 	uBit.io.P13.eventOn(MICROBIT_PIN_EVENT_ON_EDGE);
-	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_FALL, onCollision, MESSAGE_BUS_LISTENER_IMMEDIATE);
-	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, postCollision, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_FALL, onCollisionLeft, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, postCollisionLeft, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, onCollisionRight, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, postCollisionRight, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
-	motorRun(0,0,0x30);
+	// motorRun(0,0,0x30);
+	// while(true){
+	// 	if(bias == 0){
+	// 		motorRun(0,0,0x30);
+	// 	}else {
+	// 		motorRun(1,0,0x30);
+	// 	}
+	// }	
 }
