@@ -2,6 +2,8 @@
 
 MicroBit uBit;
 int bias = 0; // Default left bias
+bool leftIsOnWhite = false;
+bool rightIsOnWhite = false;
 
 void motorRun(int index, int direction, int speed)
 {
@@ -72,28 +74,22 @@ int readGreyscale(int side)
     return -1;
 }
 
-// void checkLeftFiber()
-// {
-//     while (1)
-//     {
-//         if (readGreyscale(0) == 0)
-//         {
-// 			MicroBitEvent evt(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE); 
-//             uBit.messageBus.send(evt);
-//         }
-// 		uBit.sleep(10);
-//     }
-// }
-
 void leftOnWhite(Event evt)
 {
 	motorStop(2);
 	motorRun(0,0,48);
 	motorRun(1,1,48);
+	leftIsOnWhite = true;
 }
 
 void leftOnBlack(Event evt){
+	if(leftIsOnWhite){
+		if(bias == 0) bias = 1;
+		else bias = 0;
+	}
+
 	motorRun(2,0,48);
+	leftIsOnWhite = false;
 }
 
 void rightOnWhite(Event evt)
@@ -101,10 +97,24 @@ void rightOnWhite(Event evt)
 	motorStop(2);
 	motorRun(1,0,48);
 	motorRun(0,1,48);
+
+	rightIsOnWhite = true;
+
+	if(leftIsOnWhite && rightIsOnWhite){
+		// On intersection
+		motorStop(2);
+		motorRun(bias,0,48);
+	}
 }
 
 void rightOnBlack(Event evt){
+	if(rightIsOnWhite && leftIsOnWhite){
+		if(bias == 0) bias = 1;
+		else bias = 0;
+	}
+
 	motorRun(2,0,48);
+	rightIsOnWhite = false;
 }
 
 int main()
