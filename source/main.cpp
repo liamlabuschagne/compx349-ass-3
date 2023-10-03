@@ -85,36 +85,26 @@ int readGreyscale(int side)
 //     }
 // }
 
-void onCollisionLeft(Event evt)
+void leftOnWhite(Event evt)
 {
-	if (bias == 0) {
-		motorStop(0);
-		motorRun(1,0,0x30);
-	}
+	motorStop(2);
+	motorRun(0,0,48);
+	motorRun(1,1,48);
 }
 
-void postCollisionLeft(Event evt){
-	if (bias == 0) {
-		motorStop(1);
-		motorRun(0,0,0x30);
-		bias = 1;
-	}
+void leftOnBlack(Event evt){
+	motorRun(2,0,48);
 }
 
-void onCollisionRight(Event evt)
+void rightOnWhite(Event evt)
 {
-	if (bias == 1) {
-		motorStop(1);
-		motorRun(0,0,0x30);
-	}
+	motorStop(2);
+	motorRun(1,0,48);
+	motorRun(0,1,48);
 }
 
-void postCollisionRight(Event evt){
-	if (bias == 1) {
-		motorStop(0);
-		motorRun(1,0,0x30);
-		bias = 0;
-	}
+void rightOnBlack(Event evt){
+	motorRun(2,0,48);
 }
 
 int main()
@@ -122,17 +112,11 @@ int main()
     uBit.init();
 
 	uBit.io.P13.eventOn(MICROBIT_PIN_EVENT_ON_EDGE);
-	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_FALL, onCollisionLeft, MESSAGE_BUS_LISTENER_IMMEDIATE);
-	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, postCollisionLeft, MESSAGE_BUS_LISTENER_IMMEDIATE);
-	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, onCollisionRight, MESSAGE_BUS_LISTENER_IMMEDIATE);
-	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, postCollisionRight, MESSAGE_BUS_LISTENER_IMMEDIATE);
-
-	// motorRun(0,0,0x30);
-	// while(true){
-	// 	if(bias == 0){
-	// 		motorRun(0,0,0x30);
-	// 	}else {
-	// 		motorRun(1,0,0x30);
-	// 	}
-	// }	
+	uBit.io.P14.eventOn(MICROBIT_PIN_EVENT_ON_EDGE);
+	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_FALL, leftOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, leftOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, rightOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, rightOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	
+	motorRun(2,0,0x30);
 }
