@@ -117,16 +117,52 @@ void rightOnBlack(Event evt){
 	rightIsOnWhite = false;
 }
 
+void triggerUltrasonic(){
+    // Clear the trigger pin
+    uBit.io.P1.setDigitalValue(0);
+    uBit.sleep(1);
+    
+    // Trigger for 20ms
+    uBit.io.P1.setDigitalValue(1);
+    uBit.sleep(20);
+    uBit.io.P1.setDigitalValue(0);
+    
+    uBit.display.scroll("U");
+}
+
+void ultrasonicHigh(Event evt){
+    int duration = evt.timestamp;
+    uBit.display.scroll("H");
+    uBit.display.scroll(duration);
+}
+
+void ultrasonicLow(Event evt){
+    int duration = evt.timestamp;
+    uBit.display.scroll("L");
+    uBit.display.scroll(duration);
+}
+
 int main()
 {
     uBit.init();
 
 	uBit.io.P13.eventOn(MICROBIT_PIN_EVENT_ON_EDGE);
 	uBit.io.P14.eventOn(MICROBIT_PIN_EVENT_ON_EDGE);
+	uBit.io.P2.eventOn(MICROBIT_PIN_EVENT_ON_PULSE);
+
+    /*
 	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_FALL, leftOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
 	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, leftOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
 	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, rightOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
 	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, rightOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
-	
-	motorRun(2,0,0x30);
+    */
+    uBit.messageBus.listen(MICROBIT_ID_IO_P2, MICROBIT_PIN_EVT_PULSE_HI, ultrasonicHigh, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    uBit.messageBus.listen(MICROBIT_ID_IO_P2, MICROBIT_PIN_EVT_PULSE_LO, ultrasonicLow, MESSAGE_BUS_LISTENER_IMMEDIATE);
+
+	/*motorRun(2,0,0x30);*/
+    
+    while(1){
+        triggerUltrasonic();
+        uBit.sleep(1000);
+    }
 }
