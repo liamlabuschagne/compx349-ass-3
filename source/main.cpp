@@ -4,6 +4,7 @@ MicroBit uBit;
 int bias = 0; // Default left bias
 bool leftIsOnWhite = false;
 bool rightIsOnWhite = false;
+int pulseType=0;
 
 void motorRun(int index, int direction, int speed)
 {
@@ -117,29 +118,34 @@ void rightOnBlack(Event evt){
 	rightIsOnWhite = false;
 }
 
-void triggerUltrasonic(){
-    // Clear the trigger pin
-    uBit.io.P1.setDigitalValue(0);
-    uBit.sleep(1);
-    
-    // Trigger for 20ms
+int readUltrasonic(){
+    int d;
+
     uBit.io.P1.setDigitalValue(1);
-    uBit.sleep(20);
+    uBit.sleep(1);
     uBit.io.P1.setDigitalValue(0);
-    
-    uBit.display.scroll("U");
-}
 
-void ultrasonicHigh(Event evt){
-    int duration = evt.timestamp;
-    uBit.display.scroll("H");
-    uBit.display.scroll(duration);
-}
+    if (uBit.io.P2.getDigitalValue() == 0) {
+        uBit.io.P1.setDigitalValue(0);
+        uBit.io.P1.setDigitalValue(1);
+        uBit.sleep(20);
+        uBit.io.P1.setDigitalValue(0);
 
-void ultrasonicLow(Event evt){
-    int duration = evt.timestamp;
-    uBit.display.scroll("L");
-    uBit.display.scroll(duration);
+        uBit.io.P2.setPolarity(1);
+        
+        d = uBit.io.P2.getPulseUs(500*58);
+    } else {
+        uBit.io.P1.setDigitalValue(1);
+        uBit.io.P1.setDigitalValue(0);
+        uBit.sleep(20);
+        uBit.io.P1.setDigitalValue(0);
+
+        uBit.io.P2.setPolarity(0);
+
+        d = uBit.io.P2.getPulseUs(500*58);
+    }
+
+    return (d/59);
 }
 
 int main()
@@ -148,21 +154,25 @@ int main()
 
 	uBit.io.P13.eventOn(MICROBIT_PIN_EVENT_ON_EDGE);
 	uBit.io.P14.eventOn(MICROBIT_PIN_EVENT_ON_EDGE);
-	uBit.io.P2.eventOn(MICROBIT_PIN_EVENT_ON_PULSE);
 
-    /*
+    
 	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_FALL, leftOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
 	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, leftOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
 	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, rightOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
 	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, rightOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
-    */
-    uBit.messageBus.listen(MICROBIT_ID_IO_P2, MICROBIT_PIN_EVT_PULSE_HI, ultrasonicHigh, MESSAGE_BUS_LISTENER_IMMEDIATE);
-    uBit.messageBus.listen(MICROBIT_ID_IO_P2, MICROBIT_PIN_EVT_PULSE_LO, ultrasonicLow, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
-	/*motorRun(2,0,0x30);*/
+	motorRun(2,0,0x30);
     
+    int d;
     while(1){
-        triggerUltrasonic();
-        uBit.sleep(1000);
+        d = readUltrasonic();
+        if (d <= 15 && d >= -17) {
+            uBit.io.P8.setDigitalValue(1);
+            uBit.io.P12.setDigitalValue(0);
+        } else {
+            uBit.io.P12.setDigitalValue(1);
+            uBit.io.P8.setDigitalValue(0);
+        }
+        uBit.sleep(50);
     }
 }
