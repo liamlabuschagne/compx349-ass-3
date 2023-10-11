@@ -1,10 +1,8 @@
 #include "MicroBit.h"
 
 MicroBit uBit;
-int bias = 0; // Default left bias
-bool leftIsOnWhite = false;
-bool rightIsOnWhite = false;
-int pulseType=0;
+int bias = 1; // Default right bias
+unsigned long time = 0;
 
 void motorRun(int index, int direction, int speed)
 {
@@ -78,44 +76,48 @@ int readGreyscale(int side)
 void leftOnWhite(Event evt)
 {
 	motorStop(2);
-	motorRun(0,0,48);
-	motorRun(1,1,48);
-	leftIsOnWhite = true;
+	motorRun(0,0,24);
+	motorRun(1,1,24);
 }
 
 void leftOnBlack(Event evt){
-	if(leftIsOnWhite){
-		if(bias == 0) bias = 1;
-		else bias = 0;
-	}
-
-	motorRun(2,0,48);
-	leftIsOnWhite = false;
+	motorStop(2);	
 }
 
 void rightOnWhite(Event evt)
 {
 	motorStop(2);
-	motorRun(1,0,48);
-	motorRun(0,1,48);
 
-	rightIsOnWhite = true;
-
-	if(leftIsOnWhite && rightIsOnWhite){
+	if(readGreyscale(0) == 0){
+		motorRun(1,0,24);
+		motorRun(0,1,24);
+	}else if(time == 0){
 		// On intersection
+		writeLED(0,0);
+		time = uBit.systemTime();
 		motorStop(2);
-		motorRun(bias,0,48);
+		motorRun(bias, 0, 24);
+	}else {
+		time = 0;
 	}
 }
 
 void rightOnBlack(Event evt){
-	if(rightIsOnWhite && leftIsOnWhite){
-		if(bias == 0) bias = 1;
-		else bias = 0;
+	motorStop(2);
+	
+	if(time > 0 && uBit.systemTime() - time > 800){
+		motorRun(1,0,24);
+		motorRun(0,1,24);
+		writeLED(0,1); // We've detected a 180 after an intersection
+		return;
 	}
 
-	motorRun(2,0,48);
-	rightIsOnWhite = false;
+	if(readGreyscale(0) == 0){
+		motorRun(2,0,48);
+	}else {
+		motorRun(0,0,24);
+		motorRun(1,1,24);
+	}
 }
 
 int readUltrasonic(){
@@ -162,7 +164,7 @@ int main()
 	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, rightOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
 	motorRun(2,0,0x30);
-    
+   /* 
     int d;
     while(1){
         d = readUltrasonic();
@@ -174,5 +176,5 @@ int main()
             uBit.io.P8.setDigitalValue(0);
         }
         uBit.sleep(50);
-    }
+    }*/
 }
