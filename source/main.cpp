@@ -1,6 +1,7 @@
 #include "MicroBit.h"
 
 void intersection();
+void rightTurn();
 
 MicroBit uBit;
 int bias = 1; // Default right bias
@@ -104,91 +105,108 @@ int readUltrasonic(){
 
     return (d/59);
 }
-/*
-void leftOnWhite(Event evt)
-{
-	motorStop(2);
-	if(readGreyscale(1) == 0){
-		// Wiggle back on to line
-		motorRun(0,0,24);
-		motorRun(1,1,24);
-	}else {
-		create_fiber(intersection);
-	}
-}*/
 
 void wiggle(int direction){
 	if(direction == 0){
 		motorRun(1,0,SPEED);
+        // motorRun(0,0,SPEED/5);
 	}else {
 		motorRun(0,0,SPEED);
+        // motorRun(1,0,SPEED/5);
 	}	
+}
+
+void leftOnWhite(Event evt)
+{
+	motorStop(2);
+
+	if(readGreyscale(1) == 0){ // right on black
+	}else {
+        // turn left
+        wiggle(0);
+	}
 }
 
 void leftOnBlack(Event evt){
 	motorStop(2);
 
-	if(readGreyscale(1) == 1){
-		create_fiber(intersection);
+	if(readGreyscale(1) == 1){ // right on white
+		// create_fiber(intersection);
+        // turn right
+        wiggle(1);
 	}else {
-		wiggle(0);
+        // turn right
+        rightTurn();
 	}
 }
 
-void rightOnWhite(Event evt)
-{
-	motorStop(2);
+// void rightOnWhite(Event evt)
+// {
+// 	motorStop(2);
 
-	if(readGreyscale(0) == 0){
-		create_fiber(intersection);
-	}else {
-		wiggle(1);
-	}
-}
-/*
+// 	if(readGreyscale(0) == 0){
+// 		create_fiber(intersection);
+// 	}else {
+//         while (readGreyscale(0) == 1)
+// 		    wiggle(1);
+// 	}
+// }
+
+
 void rightOnBlack(Event evt){
 	motorStop(2);
 
-	if(readGreyscale(0) == 0){
-		motorRun(2,0,48);
+	if(readGreyscale(0) == 0){ // left on black
+		create_fiber(rightTurn);
 	}else {
-		motorRun(0,0,24);
-		motorRun(1,1,24);
+		create_fiber(intersection);
 	}
-}*/
+}
 
 void enableGreyscaleEvents(){
 	uBit.io.P13.eventOn(MICROBIT_PIN_EVENT_ON_EDGE);
 	uBit.io.P14.eventOn(MICROBIT_PIN_EVENT_ON_EDGE);
 
 	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_FALL, leftOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
-	//uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, leftOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
-	//uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, rightOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
-	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, rightOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, leftOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, rightOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
+	// uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, rightOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 void disableGreyscaleEvents(){
 	uBit.messageBus.ignore(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_FALL, leftOnBlack);
-	//uBit.messageBus.ignore(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, leftOnWhite);
-	//uBit.messageBus.ignore(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, rightOnBlack);
-	uBit.messageBus.ignore(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, rightOnWhite);
+	uBit.messageBus.ignore(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, leftOnWhite);
+	uBit.messageBus.ignore(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, rightOnBlack);
+	// uBit.messageBus.ignore(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, rightOnWhite);
+}
+
+void rightTurn() {
+    uBit.display.scroll("R");
+    disableGreyscaleEvents();
+    motorRun(0,0,SPEED);
+    uBit.sleep(950*50/SPEED);
+    enableGreyscaleEvents();
+    motorRun(2,0,SPEED);
 }
 
 void intersection(){
 	disableGreyscaleEvents();
-	if(bias == 0){
+	if(bias == 1){
+        // uBit.display.scroll("R");
 		motorRun(0,0,SPEED);
-		motorRun(1,1,SPEED);
-		bias = 1;
-	}else {
-		motorRun(1,0,SPEED);
-		motorRun(0,1,SPEED);
+		// motorRun(1,1,SPEED);
 		bias = 0;
+        uBit.sleep(950*50/SPEED);
+	}else {
+        // uBit.display.scroll("L");
+		motorRun(1,0,SPEED);
+		// motorRun(0,1,SPEED);
+		bias = 1;
+        uBit.sleep(600*50/SPEED);
 	}
-	uBit.sleep(500);
 	enableGreyscaleEvents();
 	motorRun(2,0,SPEED);
-	uBit.sleep(500);
+	// uBit.sleep(500);
 }
 
 int main()
