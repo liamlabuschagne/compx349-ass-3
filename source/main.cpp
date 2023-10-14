@@ -1,19 +1,29 @@
 #include "MicroBit.h"
+#define SPEED 50
 
 void intersection();
 void rightTurn();
 
-MicroBit uBit;
-int bias = 1; // Default right bias
-const int SPEED = 50;
-int detectedObstacle = false;
+enum Direction {
+	FORWARD,
+	BACKWARD
+};
 
-void motorRun(int index, int direction, int speed)
+enum Motor {
+	LEFT,
+	RIGHT,
+	ALL
+};
+
+MicroBit uBit;
+int bias = RIGHT; // Default right bias
+
+void motorRun(Motor index, Direction direction, int speed)
 {
     uint8_t buf[3];
     switch (index)
     {
-    case 0: // Left
+    case LEFT:
         buf[0] = 0x00;
         buf[1] = direction; // 0 forward,  1 backward
         buf[2] = speed;
@@ -22,7 +32,7 @@ void motorRun(int index, int direction, int speed)
             0x20, buf,
             3); // device address is 0x10 but must be left shifted for Micro:bit libraries.
         break;
-    case 1: // Right
+    case RIGHT:
         buf[0] = 0x02;
         buf[1] = direction; // 0 forward,  1 backward
         buf[2] = speed;
@@ -31,7 +41,7 @@ void motorRun(int index, int direction, int speed)
             0x20, buf,
             3); // device address is 0x10 but must be left shifted for Micro:bit libraries.
         break;
-    case 2: // Both
+    case ALL:
         buf[0] = 0x00;
         buf[1] = direction; // 0 forward,  1 backward
         buf[2] = speed;
@@ -44,9 +54,9 @@ void motorRun(int index, int direction, int speed)
     }
 }
 
-void motorStop(int index)
+void motorStop(Motor index)
 {
-    motorRun(index, 0, 0);
+    motorRun(index, FORWARD, 0);
 }
 
 void writeLED(int led, int ledSwitch)
@@ -109,17 +119,15 @@ int readUltrasonic(){
 
 void wiggle(int direction){
 	if(direction == 0){
-		motorRun(1,0,SPEED);
-        // motorRun(0,0,SPEED/5);
+		motorRun(RIGHT,FORWARD,SPEED);
 	}else {
-		motorRun(0,0,SPEED);
-        // motorRun(1,0,SPEED/5);
+		motorRun(LEFT,FORWARD,SPEED);
 	}	
 }
 
 void leftOnWhite(Event evt)
 {
-	motorStop(2);
+	motorStop(ALL);
 
 	if(readGreyscale(1) == 0){ // right on black
 	}else {
@@ -129,10 +137,9 @@ void leftOnWhite(Event evt)
 }
 
 void leftOnBlack(Event evt){
-	motorStop(2);
+	motorStop(ALL);
 
 	if(readGreyscale(1) == 1){ // right on white
-		// create_fiber(intersection);
         // turn right
         wiggle(1);
 	}else {
@@ -141,23 +148,10 @@ void leftOnBlack(Event evt){
 	}
 }
 
-// void rightOnWhite(Event evt)
-// {
-// 	motorStop(2);
-
-// 	if(readGreyscale(0) == 0){
-// 		create_fiber(intersection);
-// 	}else {
-//         while (readGreyscale(0) == 1)
-// 		    wiggle(1);
-// 	}
-// }
-
-
 void rightOnBlack(Event evt){
-	motorStop(2);
+	motorStop(ALL);
 
-	if(readGreyscale(0) == 0){ // left on black
+	if(readGreyscale(LEFT) == 0){ // left on black
 		create_fiber(rightTurn);
 	}else {
 		create_fiber(intersection);
@@ -171,43 +165,36 @@ void enableGreyscaleEvents(){
 	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_FALL, leftOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
 	uBit.messageBus.listen(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, leftOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
 	uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, rightOnBlack, MESSAGE_BUS_LISTENER_IMMEDIATE);
-	// uBit.messageBus.listen(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, rightOnWhite, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 void disableGreyscaleEvents(){
 	uBit.messageBus.ignore(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_FALL, leftOnBlack);
 	uBit.messageBus.ignore(MICROBIT_ID_IO_P13, MICROBIT_PIN_EVT_RISE, leftOnWhite);
 	uBit.messageBus.ignore(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_FALL, rightOnBlack);
-	// uBit.messageBus.ignore(MICROBIT_ID_IO_P14, MICROBIT_PIN_EVT_RISE, rightOnWhite);
 }
 
 void rightTurn() {
     uBit.display.scroll("R");
     disableGreyscaleEvents();
-    motorRun(0,0,SPEED);
+    motorRun(LEFT,FORWARD,SPEED);
     uBit.sleep(950*50/SPEED);
     enableGreyscaleEvents();
-    motorRun(2,0,SPEED);
+    motorRun(ALL,FORWARD,SPEED);
 }
 
 void intersection(){
 	disableGreyscaleEvents();
 	if(bias == 1){
-        // uBit.display.scroll("R");
-		motorRun(0,0,SPEED);
-		// motorRun(1,1,SPEED);
+		motorRun(LEFT,FORWARD,SPEED);
 		bias = 0;
         uBit.sleep(1000*50/SPEED);
 	}else {
-        // uBit.display.scroll("L");
-		motorRun(1,0,SPEED);
-		// motorRun(0,1,SPEED);
+		motorRun(RIGHT,FORWARD,SPEED);
 		bias = 1;
         uBit.sleep(600*50/SPEED);
 	}
 	enableGreyscaleEvents();
-	motorRun(2,0,SPEED);
-	// uBit.sleep(500);
+	motorRun(ALL,FORWARD,SPEED);
 }
 
 int main()
@@ -215,13 +202,13 @@ int main()
     uBit.init();
 	enableGreyscaleEvents();	
 
-	wiggle(1);
+	wiggle(RIGHT);
     
     int d;
     while(1){
         d = readUltrasonic();
         if (d <= 15 && d > 0) {
-			motorStop(2);
+			motorStop(ALL);
             uBit.io.P12.setDigitalValue(1);
         } else {
             uBit.io.P12.setDigitalValue(0);
