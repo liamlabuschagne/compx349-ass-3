@@ -6,6 +6,7 @@ void rightTurn();
 MicroBit uBit;
 int bias = 1; // Default right bias
 const int SPEED = 50;
+int detectedObstacle = false;
 
 void motorRun(int index, int direction, int speed)
 {
@@ -196,7 +197,7 @@ void intersection(){
 		motorRun(0,0,SPEED);
 		// motorRun(1,1,SPEED);
 		bias = 0;
-        uBit.sleep(950*50/SPEED);
+        uBit.sleep(1000*50/SPEED);
 	}else {
         // uBit.display.scroll("L");
 		motorRun(1,0,SPEED);
@@ -219,13 +220,12 @@ int main()
     int d;
     while(1){
         d = readUltrasonic();
-        if (d <= 15 && d >= -17) {
-            uBit.io.P8.setDigitalValue(1);
-            uBit.io.P12.setDigitalValue(0);
-        } else {
+        if (d <= 15 && d > 0) {
+			motorStop(2);
             uBit.io.P12.setDigitalValue(1);
-            uBit.io.P8.setDigitalValue(0);
+        } else {
+            uBit.io.P12.setDigitalValue(0);
         }
-        uBit.sleep(50);
+        uBit.sleep(1000);
     }
 }
